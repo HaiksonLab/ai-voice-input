@@ -15,6 +15,7 @@ prompt := IniRead(configPath, "Whisper", "Prompt", "")
 soundStart := IniRead(configPath, "Whisper", "SoundStart", "")
 soundStop := IniRead(configPath, "Whisper", "SoundStop", "")
 soundCancel := IniRead(configPath, "Whisper", "SoundCancel", "")
+minRecordMs := Integer(IniRead(configPath, "Whisper", "MinRecordMs", "1500"))
 
 if (apiKey = "" || apiKey = "sk-YOUR-API-KEY-HERE") {
     MsgBox("Укажите API-ключ OpenAI в файле:`n" configPath, "Voice Input — Ошибка", "Icon!")
@@ -30,7 +31,7 @@ recordStartTime := 0
 
 ; --- Горячая клавиша: клавиша контекстного меню ---
 AppsKey:: {
-    global isRecording, wavFile, apiKey, model, prompt, recordStartTime, soundStart, soundStop
+    global isRecording, wavFile, apiKey, model, prompt, recordStartTime, soundStart, soundStop, minRecordMs
 
     if (!isRecording) {
         ; === НАЧАЛО ЗАПИСИ ===
@@ -101,7 +102,7 @@ Enter:: {
 
 ; --- Остановка записи, распознавание и вставка ---
 StopAndTranscribe(autoEnter) {
-    global isRecording, isTranscribing, isCancelled, wavFile, apiKey, model, prompt
+    global isRecording, isTranscribing, isCancelled, wavFile, apiKey, model, prompt, recordStartTime, minRecordMs, soundCancel
 
     isRecording := false
     SetTimer(UpdateRecordingTooltip, 0)
@@ -123,6 +124,14 @@ StopAndTranscribe(autoEnter) {
         return
     }
 
+    if (minRecordMs > 0 && A_TickCount - recordStartTime < minRecordMs) {
+        try FileDelete(wavFile)
+        PlaySound(soundCancel)
+        ToolTip("Отмена")
+        SetTimer(() => ToolTip(), -800)
+        return
+    }
+
     isCancelled := false
     PlaySound(soundStop)
     isTranscribing := true
@@ -136,7 +145,7 @@ StopAndTranscribe(autoEnter) {
         return
     }
 
-    if (text = "") {
+    if (text = "" || Trim(text) = "") {
         ToolTip("Ничего не распознано")
         SetTimer(() => ToolTip(), -3000)
         return
