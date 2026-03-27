@@ -1,88 +1,90 @@
+🇬🇧 **English** | [🇷🇺 Русский](README.ru.md)
+
 # 🎙 AI Voice Input
 
-Голосовой ввод текста для Windows на базе OpenAI Whisper API.
-Нажмите клавишу — скажите — текст вставится в любое активное окно.
+Windows voice-to-text input powered by OpenAI Whisper API.
+Press a key — speak — text gets pasted into any active window.
 
-## Возможности
+## Features
 
-- Запись с микрофона по нажатию клавиши контекстного меню (≡)
-- Распознавание речи через OpenAI Whisper API (отличное качество русского языка)
-- Вставка результата в любое активное окно через буфер обмена
-- **Enter** во время записи — остановить, распознать и сразу отправить
-- **Escape** во время записи — отменить без распознавания
-- **Escape** во время распознавания — отменить до вставки текста
-- Таймер записи в тултипе (показывает сколько секунд/минут идёт запись)
-- Звуковые сигналы на старт, стоп и отмену
-- Настраиваемый `prompt` для улучшения качества распознавания терминов
-- Все параметры вынесены в `config.ini` — не нужно трогать код
+- Microphone recording triggered by the Menu key (≡)
+- Speech recognition via OpenAI Whisper API (excellent quality for any language)
+- Result pasted into any active window via clipboard
+- **Enter** while recording — stop, transcribe, and send Enter immediately
+- **Escape** while recording — cancel without transcription
+- **Escape** while transcribing — cancel before text is pasted
+- Recording timer in tooltip (shows seconds/minutes elapsed)
+- Sound notifications on start, stop, and cancel
+- Configurable `prompt` to improve recognition of domain-specific terms
+- All settings in `config.ini` — no need to touch the code
 
-## Требования
+## Requirements
 
 - Windows 10 / 11
-- [AutoHotkey v2](https://www.autohotkey.com/) (не v1)
-- API-ключ OpenAI с доступом к Audio API: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-- `curl` (встроен в Windows 10+)
+- [AutoHotkey v2](https://www.autohotkey.com/) (not v1)
+- OpenAI API key with Audio API access: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+- `curl` (built into Windows 10+)
 
-## Установка
+## Installation
 
-1. Скачайте или клонируйте репозиторий
-2. Скопируйте `config.example.ini` → `config.ini`
-3. Откройте `config.ini` и укажите свой API-ключ в строке `ApiKey=`
-4. Запустите `ai_voice_input.ahk` двойным кликом
+1. Download or clone the repository
+2. Copy `config.example.ini` → `config.ini`
+3. Open `config.ini` and set your API key in the `ApiKey=` line
+4. Double-click `ai_voice_input.ahk` to run
 
-Для автозапуска вместе с Windows — создайте ярлык на `ai_voice_input.ahk` и поместите его в папку автозагрузки (`Win+R` → `shell:startup`).
+To auto-start with Windows — create a shortcut to `ai_voice_input.ahk` and place it in the startup folder (`Win+R` → `shell:startup`).
 
-## Настройка
+## Configuration
 
-Все параметры находятся в файле `config.ini`:
+All settings are in `config.ini`:
 
-| Параметр | Описание | По умолчанию |
+| Parameter | Description | Default |
 |---|---|---|
-| `ApiKey` | API-ключ OpenAI | — |
-| `Model` | Модель транскрипции | `gpt-4o-transcribe` |
-| `Prompt` | Подсказка для модели (опционально) | пусто |
-| `SoundStart` | Звук начала записи (путь к WAV) | пусто |
-| `SoundStop` | Звук остановки записи (путь к WAV) | пусто |
-| `SoundCancel` | Звук отмены (путь к WAV) | пусто |
-| `MinRecordMs` | Минимальная длительность записи в мс (короче — считается отменой, `0` = отключено) | `1000` |
+| `ApiKey` | OpenAI API key | — |
+| `Model` | Transcription model | `gpt-4o-transcribe` |
+| `Prompt` | Hint for the model (optional) | empty |
+| `SoundStart` | Recording start sound (path to WAV) | empty |
+| `SoundStop` | Recording stop sound (path to WAV) | empty |
+| `SoundCancel` | Cancel sound (path to WAV) | empty |
+| `MinRecordMs` | Minimum recording duration in ms (shorter = treated as cancel, `0` = disabled) | `1000` |
 
-**Про модели:** актуальный список поддерживаемых моделей Whisper смотрите на [platform.openai.com/docs/models](https://platform.openai.com/docs/models).
+**Models:** for the current list of supported Whisper models see [platform.openai.com/docs/models](https://platform.openai.com/docs/models).
 
-**Про `Prompt`:** необязательный параметр. Помогает модели точнее распознавать профессиональные термины, имена, аббревиатуры. Укажите в нём ключевые слова из вашей области.
+**Prompt:** optional parameter. Helps the model more accurately recognize professional terms, names, and abbreviations. Add keywords from your domain.
 
-**Про звуки:** можно использовать встроенные звуки Windows, например:
+**Sounds:** you can use built-in Windows sounds, for example:
 ```ini
 SoundStart=C:\Windows\Media\Speech On.wav
 SoundStop=C:\Windows\Media\Speech Off.wav
 SoundCancel=C:\Windows\Media\Speech Misrecognition.wav
 ```
 
-## Горячие клавиши
+## Hotkeys
 
-| Клавиша | Действие |
+| Key | Action |
 |---|---|
-| ≡ (Menu key) | Начать запись / остановить и распознать |
-| Enter *(во время записи)* | Остановить, распознать и нажать Enter |
-| Escape *(во время записи)* | Отменить запись |
-| Escape *(во время распознавания)* | Отменить до вставки текста |
+| ≡ (Menu key) | Start recording / stop and transcribe |
+| Enter *(while recording)* | Stop, transcribe, and press Enter |
+| Escape *(while recording)* | Cancel recording |
+| Escape *(while transcribing)* | Cancel before text is pasted |
 
-## Известные ограничения
+## Known Limitations
 
-### Галлюцинации при тишине
+### Hallucinations on silence
 
-Если во время записи ничего не было сказано, а затем нажать кнопку остановки — API может вернуть не пустую строку, а произвольный текст: фрагмент из `Prompt` или тематически похожую фразу.
+If nothing was said during recording and you press stop — the API may return arbitrary text instead of an empty string: a fragment from `Prompt` or a thematically similar phrase.
 
-Это **ожидаемое поведение** Whisper и `gpt-4o-transcribe`: модели всегда пытаются декодировать что-то в текст и не имеют режима "вернуть пусто при отсутствии речи". Наличие `Prompt` усиливает эффект — модель достраивает текст из его контекста.
+This is **expected behavior** of Whisper and `gpt-4o-transcribe`: models always try to decode something into text and have no "return empty when no speech" mode. Having a `Prompt` amplifies the effect — the model completes text from its context.
 
-**Решение простое:** если вы начали запись и не сказали ничего — нажмите **Escape** вместо кнопки остановки. Escape отменяет запись без обращения к API.
+**Simple solution:** if you started recording and said nothing — press **Escape** instead of the stop button. Escape cancels recording without calling the API.
 
-## Стоимость
+## Cost
 
-Whisper API тарифицируется по времени аудио.
-На момент публикации цена составляет около **$0.006 за минуту** — это примерно **$1 за 3 часа** разговора.
+Whisper API is billed by audio duration.
+At time of writing the price is approximately **$0.006 per minute** — about **$1 per 3 hours** of speech.
 
-Актуальные цены: [platform.openai.com/docs/pricing](https://platform.openai.com/docs/pricing)
+Current pricing: [platform.openai.com/docs/pricing](https://platform.openai.com/docs/pricing)
 
-## Лицензия
+## License
 
 MIT
