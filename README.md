@@ -47,6 +47,14 @@ All settings are in `config.ini`:
 | `SoundStop` | Recording stop sound (path to WAV) | empty |
 | `SoundCancel` | Cancel sound (path to WAV) | empty |
 | `MinRecordMs` | Minimum recording duration in ms (shorter = treated as cancel, `0` = disabled) | `1000` |
+| `Proxy` | SOCKS5h proxy for OpenAI API requests (optional) | empty |
+
+**Proxy** example:
+```ini
+Proxy=socks5h://127.0.0.1:1080
+; With authentication:
+; Proxy=socks5h://login:pass@127.0.0.1:1080
+```
 
 **Models:** for the current list of supported Whisper models see [platform.openai.com/docs/models](https://platform.openai.com/docs/models).
 
