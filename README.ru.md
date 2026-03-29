@@ -107,6 +107,11 @@ Whisper API тарифицируется по времени аудио.
 
 Актуальные цены: [platform.openai.com/docs/pricing](https://platform.openai.com/docs/pricing)
 
+## Версия для macOS
+
+Доступна macOS-версия с идентичным функционалом — см. [README.mac.md](README.mac.md).
+Использует Python 3 с библиотеками `sounddevice`, `pynput` и `requests` вместо AutoHotkey.
+
 ## Лицензия
 
 MIT

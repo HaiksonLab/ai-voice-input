@@ -107,6 +107,11 @@ At time of writing the price is approximately **$0.006 per minute** — about **
 
 Current pricing: [platform.openai.com/docs/pricing](https://platform.openai.com/docs/pricing)
 
+## macOS Version
+
+A macOS port with identical functionality is available — see [README.mac.md](README.mac.md) for setup instructions.
+Uses Python 3 with `sounddevice`, `pynput`, and `requests` instead of AutoHotkey.
+
 ## License
 
 MIT
