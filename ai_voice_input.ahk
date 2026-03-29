@@ -2,7 +2,7 @@
 #SingleInstance Force
 
 ; ============================================================
-;  Голосовой ввод: AppsKey toggle — запись → Whisper API → вставка
+;  Голосовой ввод: настраиваемая клавиша toggle — запись → Whisper API → вставка
 ; ============================================================
 
 Persistent
@@ -17,6 +17,7 @@ soundStop := IniRead(configPath, "Whisper", "SoundStop", "")
 soundCancel := IniRead(configPath, "Whisper", "SoundCancel", "")
 minRecordMs := Integer(IniRead(configPath, "Whisper", "MinRecordMs", "1500"))
 proxy := IniRead(configPath, "Whisper", "Proxy", "")
+recordKey := IniRead(configPath, "Whisper", "RecordKey", "AppsKey")
 
 if (apiKey = "" || apiKey = "sk-YOUR-API-KEY-HERE") {
     MsgBox("Укажите API-ключ OpenAI в файле:`n" configPath, "Voice Input — Ошибка", "Icon!")
@@ -31,8 +32,15 @@ wavFile := A_Temp "\voice_input_recording.wav"
 recordStartTime := 0
 recordingFmt := ""  ; кеш формата записи
 
-; --- Горячая клавиша: клавиша контекстного меню ---
-AppsKey:: {
+; --- Горячая клавиша: задаётся через RecordKey в конфиге ---
+try {
+    Hotkey(recordKey, ToggleRecording)
+} catch {
+    MsgBox("Неверная клавиша RecordKey='" recordKey "' в конфиге.`nИспользуется AppsKey.", "Voice Input", "Icon!")
+    Hotkey("AppsKey", ToggleRecording)
+}
+
+ToggleRecording(*) {
     global isRecording, wavFile, apiKey, model, prompt, recordStartTime, soundStart, soundStop, minRecordMs, recordingFmt
 
     if (!isRecording) {
