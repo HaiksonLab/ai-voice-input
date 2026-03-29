@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.0.1] - 2026-03-29
+## [1.1.0] - 2026-03-29
 
 ### Added
 - `RecordKey` config option — customize the start/stop hotkey (default: `AppsKey`)
