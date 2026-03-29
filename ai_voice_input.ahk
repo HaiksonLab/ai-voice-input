@@ -29,10 +29,11 @@ isTranscribing := false
 isCancelled := false
 wavFile := A_Temp "\voice_input_recording.wav"
 recordStartTime := 0
+recordingFmt := ""  ; кеш формата записи
 
 ; --- Горячая клавиша: клавиша контекстного меню ---
 AppsKey:: {
-    global isRecording, wavFile, apiKey, model, prompt, recordStartTime, soundStart, soundStop, minRecordMs
+    global isRecording, wavFile, apiKey, model, prompt, recordStartTime, soundStart, soundStop, minRecordMs, recordingFmt
 
     if (!isRecording) {
         ; === НАЧАЛО ЗАПИСИ ===
@@ -51,15 +52,27 @@ AppsKey:: {
             SetTimer(() => ToolTip(), -5000)
             return
         }
-        mciSendWithError("set VoiceCapture bitspersample 16")
-        mciSendWithError("set VoiceCapture channels 1")
-        mciSendWithError("set VoiceCapture samplespersec 16000")
-        mciSendWithError("set VoiceCapture alignment 2")
+        if (recordingFmt = "")
+            recordingFmt := DetectRecordingFormat()
+        if (recordingFmt != "") {
+            mciSend("set VoiceCapture bitspersample " recordingFmt.bits)
+            mciSend("set VoiceCapture channels " recordingFmt.ch)
+            mciSend("set VoiceCapture samplespersec " recordingFmt.rate)
+            mciSend("set VoiceCapture alignment " (recordingFmt.bits // 8 * recordingFmt.ch))
+        }
         err2 := mciSendWithError("record VoiceCapture")
         if (err2 != "") {
-            ; Формат не поддерживается — попробовать с дефолтными настройками
+            ; Формат не сработал — сбросить кеш и попробовать заново
+            recordingFmt := ""
             mciSend("close VoiceCapture")
             mciSendWithError("open new Type waveaudio Alias VoiceCapture")
+            recordingFmt := DetectRecordingFormat()
+            if (recordingFmt != "") {
+                mciSend("set VoiceCapture bitspersample " recordingFmt.bits)
+                mciSend("set VoiceCapture channels " recordingFmt.ch)
+                mciSend("set VoiceCapture samplespersec " recordingFmt.rate)
+                mciSend("set VoiceCapture alignment " (recordingFmt.bits // 8 * recordingFmt.ch))
+            }
             err2 := mciSendWithError("record VoiceCapture")
             if (err2 != "") {
                 ToolTip("MCI record error: " err2)
@@ -240,6 +253,34 @@ mciSendWithError(command) {
         errBuf := Buffer(512, 0)
         DllCall("winmm\mciGetErrorStringW", "UInt", errCode, "Ptr", errBuf.Ptr, "UInt", 255)
         return StrGet(errBuf, "UTF-16")
+    }
+    return ""
+}
+
+; --- Определить поддерживаемый формат записи через waveInOpen WAVE_FORMAT_QUERY ---
+DetectRecordingFormat() {
+    ; Форматы в порядке предпочтения (Whisper лучше всего с 16kHz 16bit mono)
+    formats := [
+        {rate: 16000, bits: 16, ch: 1},
+        {rate: 22050, bits: 16, ch: 1},
+        {rate: 44100, bits: 16, ch: 1},
+        {rate: 44100, bits: 16, ch: 2},
+        {rate: 8000,  bits: 16, ch: 1},
+        {rate: 44100, bits: 8,  ch: 1},
+    ]
+    for _, fmt in formats {
+        wfx := Buffer(18, 0)
+        NumPut("UShort", 1,                                      wfx,  0)  ; wFormatTag = PCM
+        NumPut("UShort", fmt.ch,                                 wfx,  2)  ; nChannels
+        NumPut("UInt",   fmt.rate,                               wfx,  4)  ; nSamplesPerSec
+        NumPut("UInt",   fmt.rate * fmt.ch * fmt.bits // 8,      wfx,  8)  ; nAvgBytesPerSec
+        NumPut("UShort", fmt.ch * fmt.bits // 8,                 wfx, 12)  ; nBlockAlign
+        NumPut("UShort", fmt.bits,                               wfx, 14)  ; wBitsPerSample
+        NumPut("UShort", 0,                                      wfx, 16)  ; cbSize
+        ; WAVE_MAPPER = 0xFFFFFFFF, WAVE_FORMAT_QUERY = 0x0002
+        result := DllCall("winmm\waveInOpen", "Ptr", 0, "UInt", 0xFFFFFFFF, "Ptr", wfx, "Ptr", 0, "Ptr", 0, "UInt", 0x0002, "Int")
+        if (result = 0)
+            return fmt
     }
     return ""
 }
