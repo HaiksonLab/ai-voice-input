@@ -1,5 +1,7 @@
 🇬🇧 **English** | [🇷🇺 Русский](README.ru.md)
 
+[![Latest release](https://img.shields.io/github/v/release/HaiksonLab/ai-voice-input)](https://github.com/HaiksonLab/ai-voice-input/releases) [![Changelog](https://img.shields.io/badge/changelog-view-blue)](CHANGELOG.md)
+
 # 🎙 AI Voice Input
 
 Windows voice-to-text input powered by OpenAI Whisper API.
@@ -46,8 +48,20 @@ All settings are in `config.ini`:
 | `SoundStart` | Recording start sound (path to WAV) | empty |
 | `SoundStop` | Recording stop sound (path to WAV) | empty |
 | `SoundCancel` | Cancel sound (path to WAV) | empty |
+| `RecordKey` | Hotkey to start/stop recording | `AppsKey` |
 | `MinRecordMs` | Minimum recording duration in ms (shorter = treated as cancel, `0` = disabled) | `1000` |
 | `Proxy` | SOCKS5h proxy for OpenAI API requests (optional) | empty |
+
+**RecordKey** uses AutoHotkey key names. Examples:
+```ini
+RecordKey=AppsKey      ; Menu key (≡) — default
+RecordKey=F9           ; F9
+RecordKey=^F9          ; Ctrl+F9
+RecordKey=!F9          ; Alt+F9
+RecordKey=+F9          ; Shift+F9
+RecordKey=ScrollLock   ; Scroll Lock
+```
+Full key list: [autohotkey.com/docs/v2/KeyList.htm](https://www.autohotkey.com/docs/v2/KeyList.htm)
 
 **Proxy** example:
 ```ini

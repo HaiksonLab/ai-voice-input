@@ -1,5 +1,7 @@
 [🇬🇧 English](README.md) | 🇷🇺 **Русский**
 
+[![Последний релиз](https://img.shields.io/github/v/release/HaiksonLab/ai-voice-input)](https://github.com/HaiksonLab/ai-voice-input/releases) [![Список изменений](https://img.shields.io/badge/changelog-view-blue)](CHANGELOG.md)
+
 # 🎙 AI Voice Input
 
 Голосовой ввод текста для Windows на базе OpenAI Whisper API.
@@ -46,8 +48,20 @@
 | `SoundStart` | Звук начала записи (путь к WAV) | пусто |
 | `SoundStop` | Звук остановки записи (путь к WAV) | пусто |
 | `SoundCancel` | Звук отмены (путь к WAV) | пусто |
+| `RecordKey` | Клавиша старта/стопа записи | `AppsKey` |
 | `MinRecordMs` | Минимальная длительность записи в мс (короче — считается отменой, `0` = отключено) | `1000` |
 | `Proxy` | SOCKS5h прокси для запросов к OpenAI API (опционально) | пусто |
+
+**RecordKey** использует имена клавиш AutoHotkey. Примеры:
+```ini
+RecordKey=AppsKey      ; клавиша меню (≡) — по умолчанию
+RecordKey=F9           ; F9
+RecordKey=^F9          ; Ctrl+F9
+RecordKey=!F9          ; Alt+F9
+RecordKey=+F9          ; Shift+F9
+RecordKey=ScrollLock   ; Scroll Lock
+```
+Полный список клавиш: [autohotkey.com/docs/v2/KeyList.htm](https://www.autohotkey.com/docs/v2/KeyList.htm)
 
 **Прокси** пример:
 ```ini
