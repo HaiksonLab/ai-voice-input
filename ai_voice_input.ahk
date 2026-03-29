@@ -16,6 +16,7 @@ soundStart := IniRead(configPath, "Whisper", "SoundStart", "")
 soundStop := IniRead(configPath, "Whisper", "SoundStop", "")
 soundCancel := IniRead(configPath, "Whisper", "SoundCancel", "")
 minRecordMs := Integer(IniRead(configPath, "Whisper", "MinRecordMs", "1500"))
+proxy := IniRead(configPath, "Whisper", "Proxy", "")
 
 if (apiKey = "" || apiKey = "sk-YOUR-API-KEY-HERE") {
     MsgBox("Укажите API-ключ OpenAI в файле:`n" configPath, "Voice Input — Ошибка", "Icon!")
@@ -142,7 +143,7 @@ StopAndTranscribe(autoEnter) {
     isCancelled := false
     PlaySound(soundStop)
     isTranscribing := true
-    text := WhisperTranscribe(wavFile, apiKey, model, prompt)
+    text := WhisperTranscribe(wavFile, apiKey, model, prompt, proxy)
     isTranscribing := false
     try FileDelete(wavFile)
 
@@ -193,9 +194,11 @@ PlaySound(path) {
 }
 
 ; --- Whisper API через curl ---
-WhisperTranscribe(filePath, key, model, prompt := "") {
+WhisperTranscribe(filePath, key, model, prompt := "", proxy := "") {
     cmd := 'curl -s --max-time 30'
-        . ' "https://api.openai.com/v1/audio/transcriptions"'
+    if (proxy != "")
+        cmd .= ' --proxy "' proxy '"'
+    cmd .= ' "https://api.openai.com/v1/audio/transcriptions"'
         . ' -H "Authorization: Bearer ' key '"'
         . ' -F "file=@' filePath '"'
         . ' -F "model=' model '"'
