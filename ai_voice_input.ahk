@@ -50,16 +50,23 @@ AppsKey:: {
             SetTimer(() => ToolTip(), -5000)
             return
         }
-        mciSend("set VoiceCapture bitspersample 16")
-        mciSend("set VoiceCapture channels 1")
-        mciSend("set VoiceCapture samplespersec 16000")
+        mciSendWithError("set VoiceCapture bitspersample 16")
+        mciSendWithError("set VoiceCapture channels 1")
+        mciSendWithError("set VoiceCapture samplespersec 16000")
+        mciSendWithError("set VoiceCapture alignment 2")
         err2 := mciSendWithError("record VoiceCapture")
         if (err2 != "") {
-            ToolTip("MCI record error: " err2)
+            ; Формат не поддерживается — попробовать с дефолтными настройками
             mciSend("close VoiceCapture")
-            isRecording := false
-            SetTimer(() => ToolTip(), -5000)
-            return
+            mciSendWithError("open new Type waveaudio Alias VoiceCapture")
+            err2 := mciSendWithError("record VoiceCapture")
+            if (err2 != "") {
+                ToolTip("MCI record error: " err2)
+                mciSend("close VoiceCapture")
+                isRecording := false
+                SetTimer(() => ToolTip(), -5000)
+                return
+            }
         }
 
         PlaySound(soundStart)
