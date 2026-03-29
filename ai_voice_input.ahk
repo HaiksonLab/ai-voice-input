@@ -2,7 +2,7 @@
 #SingleInstance Force
 
 ; ============================================================
-;  Голосовой ввод: AppsKey toggle — запись → Whisper API → вставка
+;  Голосовой ввод: настраиваемая клавиша toggle — запись → Whisper API → вставка
 ; ============================================================
 
 Persistent
@@ -16,6 +16,8 @@ soundStart := IniRead(configPath, "Whisper", "SoundStart", "")
 soundStop := IniRead(configPath, "Whisper", "SoundStop", "")
 soundCancel := IniRead(configPath, "Whisper", "SoundCancel", "")
 minRecordMs := Integer(IniRead(configPath, "Whisper", "MinRecordMs", "1500"))
+proxy := IniRead(configPath, "Whisper", "Proxy", "")
+recordKey := IniRead(configPath, "Whisper", "RecordKey", "AppsKey")
 
 if (apiKey = "" || apiKey = "sk-YOUR-API-KEY-HERE") {
     MsgBox("Укажите API-ключ OpenAI в файле:`n" configPath, "Voice Input — Ошибка", "Icon!")
@@ -28,10 +30,18 @@ isTranscribing := false
 isCancelled := false
 wavFile := A_Temp "\voice_input_recording.wav"
 recordStartTime := 0
+recordingFmt := ""  ; кеш формата записи
 
-; --- Горячая клавиша: клавиша контекстного меню ---
-AppsKey:: {
-    global isRecording, wavFile, apiKey, model, prompt, recordStartTime, soundStart, soundStop, minRecordMs
+; --- Горячая клавиша: задаётся через RecordKey в конфиге ---
+try {
+    Hotkey(recordKey, ToggleRecording)
+} catch {
+    MsgBox("Неверная клавиша RecordKey='" recordKey "' в конфиге.`nИспользуется AppsKey.", "Voice Input", "Icon!")
+    Hotkey("AppsKey", ToggleRecording)
+}
+
+ToggleRecording(*) {
+    global isRecording, wavFile, apiKey, model, prompt, recordStartTime, soundStart, soundStop, minRecordMs, recordingFmt
 
     if (!isRecording) {
         ; === НАЧАЛО ЗАПИСИ ===
@@ -50,16 +60,35 @@ AppsKey:: {
             SetTimer(() => ToolTip(), -5000)
             return
         }
-        mciSend("set VoiceCapture bitspersample 16")
-        mciSend("set VoiceCapture channels 1")
-        mciSend("set VoiceCapture samplespersec 16000")
+        if (recordingFmt = "")
+            recordingFmt := DetectRecordingFormat()
+        if (recordingFmt != "") {
+            mciSend("set VoiceCapture bitspersample " recordingFmt.bits)
+            mciSend("set VoiceCapture channels " recordingFmt.ch)
+            mciSend("set VoiceCapture samplespersec " recordingFmt.rate)
+            mciSend("set VoiceCapture alignment " (recordingFmt.bits // 8 * recordingFmt.ch))
+        }
         err2 := mciSendWithError("record VoiceCapture")
         if (err2 != "") {
-            ToolTip("MCI record error: " err2)
+            ; Формат не сработал — сбросить кеш и попробовать заново
+            recordingFmt := ""
             mciSend("close VoiceCapture")
-            isRecording := false
-            SetTimer(() => ToolTip(), -5000)
-            return
+            mciSendWithError("open new Type waveaudio Alias VoiceCapture")
+            recordingFmt := DetectRecordingFormat()
+            if (recordingFmt != "") {
+                mciSend("set VoiceCapture bitspersample " recordingFmt.bits)
+                mciSend("set VoiceCapture channels " recordingFmt.ch)
+                mciSend("set VoiceCapture samplespersec " recordingFmt.rate)
+                mciSend("set VoiceCapture alignment " (recordingFmt.bits // 8 * recordingFmt.ch))
+            }
+            err2 := mciSendWithError("record VoiceCapture")
+            if (err2 != "") {
+                ToolTip("MCI record error: " err2)
+                mciSend("close VoiceCapture")
+                isRecording := false
+                SetTimer(() => ToolTip(), -5000)
+                return
+            }
         }
 
         PlaySound(soundStart)
@@ -135,7 +164,7 @@ StopAndTranscribe(autoEnter) {
     isCancelled := false
     PlaySound(soundStop)
     isTranscribing := true
-    text := WhisperTranscribe(wavFile, apiKey, model, prompt)
+    text := WhisperTranscribe(wavFile, apiKey, model, prompt, proxy)
     isTranscribing := false
     try FileDelete(wavFile)
 
@@ -186,9 +215,11 @@ PlaySound(path) {
 }
 
 ; --- Whisper API через curl ---
-WhisperTranscribe(filePath, key, model, prompt := "") {
+WhisperTranscribe(filePath, key, model, prompt := "", proxy := "") {
     cmd := 'curl -s --max-time 30'
-        . ' "https://api.openai.com/v1/audio/transcriptions"'
+    if (proxy != "")
+        cmd .= ' --proxy "' proxy '"'
+    cmd .= ' "https://api.openai.com/v1/audio/transcriptions"'
         . ' -H "Authorization: Bearer ' key '"'
         . ' -F "file=@' filePath '"'
         . ' -F "model=' model '"'
@@ -230,6 +261,34 @@ mciSendWithError(command) {
         errBuf := Buffer(512, 0)
         DllCall("winmm\mciGetErrorStringW", "UInt", errCode, "Ptr", errBuf.Ptr, "UInt", 255)
         return StrGet(errBuf, "UTF-16")
+    }
+    return ""
+}
+
+; --- Определить поддерживаемый формат записи через waveInOpen WAVE_FORMAT_QUERY ---
+DetectRecordingFormat() {
+    ; Форматы в порядке предпочтения (Whisper лучше всего с 16kHz 16bit mono)
+    formats := [
+        {rate: 16000, bits: 16, ch: 1},
+        {rate: 22050, bits: 16, ch: 1},
+        {rate: 44100, bits: 16, ch: 1},
+        {rate: 44100, bits: 16, ch: 2},
+        {rate: 8000,  bits: 16, ch: 1},
+        {rate: 44100, bits: 8,  ch: 1},
+    ]
+    for _, fmt in formats {
+        wfx := Buffer(18, 0)
+        NumPut("UShort", 1,                                      wfx,  0)  ; wFormatTag = PCM
+        NumPut("UShort", fmt.ch,                                 wfx,  2)  ; nChannels
+        NumPut("UInt",   fmt.rate,                               wfx,  4)  ; nSamplesPerSec
+        NumPut("UInt",   fmt.rate * fmt.ch * fmt.bits // 8,      wfx,  8)  ; nAvgBytesPerSec
+        NumPut("UShort", fmt.ch * fmt.bits // 8,                 wfx, 12)  ; nBlockAlign
+        NumPut("UShort", fmt.bits,                               wfx, 14)  ; wBitsPerSample
+        NumPut("UShort", 0,                                      wfx, 16)  ; cbSize
+        ; WAVE_MAPPER = 0xFFFFFFFF, WAVE_FORMAT_QUERY = 0x0002
+        result := DllCall("winmm\waveInOpen", "Ptr", 0, "UInt", 0xFFFFFFFF, "Ptr", wfx, "Ptr", 0, "Ptr", 0, "UInt", 0x0002, "Int")
+        if (result = 0)
+            return fmt
     }
     return ""
 }
