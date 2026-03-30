@@ -18,6 +18,7 @@ soundCancel := IniRead(configPath, "Whisper", "SoundCancel", "")
 minRecordMs := Integer(IniRead(configPath, "Whisper", "MinRecordMs", "1500"))
 proxy := IniRead(configPath, "Whisper", "Proxy", "")
 recordKey := IniRead(configPath, "Whisper", "RecordKey", "AppsKey")
+pasteKey := IniRead(configPath, "Whisper", "PasteKey", recordKey " & vk56")
 
 if (apiKey = "" || apiKey = "sk-YOUR-API-KEY-HERE") {
     MsgBox("Укажите API-ключ OpenAI в файле:`n" configPath, "Voice Input — Ошибка", "Icon!")
@@ -36,7 +37,8 @@ lastText := ""      ; последний распознанный текст
 ; --- Горячая клавиша: задаётся через RecordKey в конфиге ---
 try {
     Hotkey(recordKey, ToggleRecording)
-    Hotkey(recordKey " & vk56", PasteLastText)
+    if (pasteKey != "")
+        Hotkey(pasteKey, PasteLastText)
 } catch {
     MsgBox("Неверная клавиша RecordKey='" recordKey "' в конфиге.`nИспользуется AppsKey.", "Voice Input", "Icon!")
     Hotkey("AppsKey", ToggleRecording)
