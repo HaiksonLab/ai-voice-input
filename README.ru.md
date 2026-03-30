@@ -29,6 +29,13 @@
 
 ## Установка
 
+**Вариант А — скомпилированный exe (AutoHotkey не нужен):**
+1. Скачайте `ai-voice-input-vX.X.X-exe-win64.zip` из [последнего релиза](https://github.com/HaiksonLab/ai-voice-input/releases/latest)
+2. Распакуйте архив
+3. Переименуйте `config.example.ini` → `config.ini` и укажите API-ключ
+4. Запустите `ai_voice_input.exe`
+
+**Вариант Б — скрипт (требуется AutoHotkey v2):**
 1. Скачайте или клонируйте репозиторий
 2. Скопируйте `config.example.ini` → `config.ini`
 3. Откройте `config.ini` и укажите свой API-ключ в строке `ApiKey=`

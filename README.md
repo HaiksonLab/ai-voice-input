@@ -29,6 +29,13 @@ Press a key — speak — text gets pasted into any active window.
 
 ## Installation
 
+**Option A — Compiled exe (no AutoHotkey required):**
+1. Download `ai-voice-input-vX.X.X-exe-win64.zip` from the [latest release](https://github.com/HaiksonLab/ai-voice-input/releases/latest)
+2. Extract the archive
+3. Rename `config.example.ini` → `config.ini` and set your API key
+4. Run `ai_voice_input.exe`
+
+**Option B — Script (requires AutoHotkey v2):**
 1. Download or clone the repository
 2. Copy `config.example.ini` → `config.ini`
 3. Open `config.ini` and set your API key in the `ApiKey=` line
