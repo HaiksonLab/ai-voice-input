@@ -31,13 +31,16 @@ isCancelled := false
 wavFile := A_Temp "\voice_input_recording.wav"
 recordStartTime := 0
 recordingFmt := ""  ; кеш формата записи
+lastText := ""      ; последний распознанный текст
 
 ; --- Горячая клавиша: задаётся через RecordKey в конфиге ---
 try {
     Hotkey(recordKey, ToggleRecording)
+    Hotkey(recordKey " & vk56", PasteLastText)
 } catch {
     MsgBox("Неверная клавиша RecordKey='" recordKey "' в конфиге.`nИспользуется AppsKey.", "Voice Input", "Icon!")
     Hotkey("AppsKey", ToggleRecording)
+    Hotkey("AppsKey & vk56", PasteLastText)
 }
 
 ToggleRecording(*) {
@@ -101,6 +104,24 @@ ToggleRecording(*) {
     }
 }
 
+; --- Вставка последнего распознанного текста (RecordKey + V) ---
+PasteLastText(*) {
+    global lastText
+    if (lastText = "") {
+        ToolTip("Нет сохранённого текста")
+        SetTimer(() => ToolTip(), -1500)
+        return
+    }
+    prevClip := A_Clipboard
+    A_Clipboard := lastText
+    ClipWait(2)
+    Send("^v")
+    Sleep(100)
+    A_Clipboard := prevClip
+    ToolTip("✓ Повтор: " SubStr(lastText, 1, 60) (StrLen(lastText) > 60 ? "..." : ""))
+    SetTimer(() => ToolTip(), -2000)
+}
+
 ; --- Отмена во время распознавания ---
 #HotIf isTranscribing
 Escape:: {
@@ -131,7 +152,7 @@ Enter:: {
 
 ; --- Остановка записи, распознавание и вставка ---
 StopAndTranscribe(autoEnter) {
-    global isRecording, isTranscribing, isCancelled, wavFile, apiKey, model, prompt, recordStartTime, minRecordMs, soundCancel
+    global isRecording, isTranscribing, isCancelled, wavFile, apiKey, model, prompt, recordStartTime, minRecordMs, soundCancel, lastText
 
     isRecording := false
     SetTimer(UpdateRecordingTooltip, 0)
@@ -180,6 +201,7 @@ StopAndTranscribe(autoEnter) {
         return
     }
 
+    lastText := text
     prevClip := A_Clipboard
     A_Clipboard := text
     ClipWait(2)
